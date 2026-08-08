@@ -48,7 +48,6 @@ exports.register = asyncHandler(async (req, res) => {
 exports.login = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body;
 
-
   const isUserExists = await userModel
     .findOne({ $or: [{ email: identifier }, { phone: identifier }] })
     .select("+password");
@@ -73,9 +72,16 @@ exports.login = asyncHandler(async (req, res) => {
     refreshToken,
   });
 
-  res.cookie("Access-Token", accessToken, { httpOnly: true, maxAge: ONE_DAY });
+  res.cookie("Access-Token", accessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: ONE_DAY,
+  });
   res.cookie("Refresh-Token", refreshToken, {
     httpOnly: true,
+    secure: true,
+    sameSite: "none",
     maxAge: SEVEN_DAYS,
   });
 
