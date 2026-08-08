@@ -40,7 +40,7 @@ export default function CategorySlider() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await apiFetch("/v1/category"); // 💡 مسیر روت بک‌اند را مطابقت دهید
+        const res = await apiFetch("/category"); // 💡 مسیر روت بک‌اند را مطابقت دهید
         if (res.ok) {
           const result = await res.json();
           setCategories(result.data || []);
