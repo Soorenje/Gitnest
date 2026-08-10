@@ -82,10 +82,10 @@ export default function InstructorCoursesPage() {
 
     try {
       const res = await fetch("http://localhost:8000/v1/course/upload/cover", {
-        method: "POST",
-        body: fd,
-        credentials: "include", 
-      });
+  method: "POST",
+  body: fd,
+  credentials: "include", 
+});
 
       const data = await res.json();
 
