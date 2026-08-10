@@ -211,7 +211,7 @@ exports.uploadAvatar = (req, res, next) => {
       return next(new AppError("No file provided.", 400));
     }
 
-    const avatarUrl = `http://localhost:8000/uploads/avatars/${req.file.filename}`;
+    const avatarUrl = req.file.path;
 
     return res.status(200).json({
       success: true,

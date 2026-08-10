@@ -1,26 +1,27 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    let dir = "";
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    let folderName = "gitnest/general";
     if (file.fieldname === "avatar") {
-      dir = "uploads/avatars/";
+      folderName = "gitnest/avatars";
     } else if (file.fieldname === "cover") {
-      dir = "uploads/courses/";
+      folderName = "gitnest/courses";
     }
 
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileExtension = path.extname(file.originalname);
-    cb(null, uniqueName + fileExtension);
+    return {
+      folder: folderName,
+      allowed_formats: ["jpg", "png", "jpeg", "webp"],
+    };
   },
 });
 
@@ -32,7 +33,7 @@ const fileFilter = function (req, file, cb) {
     "image/png",
     "image/webp",
   ];
-  const allowedExtensions = [".jpeg", "jpg", ".png", ".webp"];
+  const allowedExtensions = [".jpeg", ".jpg", ".png", ".webp"];
   if (
     allowedMimeType.includes(file.mimetype) ||
     allowedExtensions.includes(ext)

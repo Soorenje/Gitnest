@@ -182,7 +182,7 @@ exports.uploadCover = (req, res, next) => {
       return next(new AppError("No file provided.", 400));
     }
 
-    const coverUrl = `http://localhost:8000/uploads/courses/${req.file.filename}`;
+    const coverUrl = req.file.path;
 
     return res.status(200).json({
       success: true,
