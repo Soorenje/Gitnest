@@ -81,7 +81,7 @@ export default function InstructorCoursesPage() {
     fd.append("cover", file);
 
     try {
-      const res = await fetch("http://localhost:8000/v1/course/upload/cover", {
+      const res = await fetch("https://gitnest-backend-l3tu.onrender.com/v1/course/upload/cover", {
   method: "POST",
   body: fd,
   credentials: "include", 
