@@ -106,11 +106,10 @@ exports.uploadFile = (req, res, next) => {
     if (!req.file) {
       return next(new AppError("No file provided.", 400));
     }
-    const folderName = req.file.mimetype.startsWith("video/")
-      ? "videos"
-      : "files";
-    const type = req.file.mimetype.startsWith("video/") ? "video" : "document";
-    const fileUrl = `http://localhost:8000/uploads/lessons/${folderName}/${req.file.filename}`;
+    const isVideo = req.file.mimetype.startsWith("video/");
+    const type = isVideo ? "video" : "document";
+
+    const fileUrl = req.file.path;
 
     return res.status(200).json({
       success: true,

@@ -1,26 +1,26 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    let dir = "uploads/lessons/";
-    if (file.mimetype.startsWith("video/")) {
-      dir += "videos/";
-    } else{
-      dir += "files/";
-    }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    const isVideo = file.mimetype.startsWith("video/");
+    const folderName = isVideo
+      ? "gitnest/lessons/videos"
+      : "gitnest/lessons/files";
 
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileExtension = path.extname(file.originalname);
-    cb(null, uniqueName + fileExtension);
+    return {
+      folder: folderName,
+      resource_type: "auto",
+    };
   },
 });
 
@@ -31,7 +31,7 @@ const fileFilter = function (req, file, cb) {
     "application/x-zip-compressed",
     "application/x-rar-compressed",
   ];
-  
+
   if (
     file.mimetype.startsWith("video/") ||
     allowedMimeTypes.includes(file.mimetype)
@@ -40,9 +40,9 @@ const fileFilter = function (req, file, cb) {
   } else {
     cb(
       new Error(
-        "Invalid file format. Only videos, PDFs, and compressed files (ZIP/RAR) are allowed."
+        "Invalid file format. Only videos, PDFs, and compressed files (ZIP/RAR) are allowed.",
       ),
-      false
+      false,
     );
   }
 };
@@ -51,7 +51,7 @@ const lessonUpload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 500 * 1024 * 1024,
+    fileSize: 100 * 1024 * 1024,
   },
 });
 
