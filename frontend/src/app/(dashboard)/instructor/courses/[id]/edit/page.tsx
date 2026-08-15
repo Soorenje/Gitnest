@@ -60,13 +60,13 @@ export default function CourseEditorPage() {
       try {
         setIsLoading(true);
 
-        const courseRes = await axios.get(`http://localhost:8000/v1/course/${courseId}`, {
+        const courseRes = await axios.get(`https://gitnest-backend-l3tu.onrender.com/v1/course/${courseId}`, {
           withCredentials: true 
         });
         const courseData = courseRes.data.data || courseRes.data;
         setCourseTitle(courseData.name || courseData.title || "بدون عنوان");
 
-        const curRes = await axios.get(`http://localhost:8000/v1/course/${courseId}/curriculum`, {
+        const curRes = await axios.get(`https://gitnest-backend-l3tu.onrender.com/v1/course/${courseId}/curriculum`, {
           withCredentials: true
         });
         
@@ -282,7 +282,7 @@ export default function CourseEditorPage() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const uploadRes = await axios.post("http://localhost:8000/v1/lesson/upload/file", formData, {
+      const uploadRes = await axios.post("https://gitnest-backend-l3tu.onrender.com/v1/lesson/upload/file", formData, {
         withCredentials: true, 
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
