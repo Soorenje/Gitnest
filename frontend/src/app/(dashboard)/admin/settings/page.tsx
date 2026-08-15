@@ -111,7 +111,7 @@ export default function AdminSettingsPage() {
 
     setIsUploading(true);
     try {
-      const res = await axios.post("http://localhost:8000/v1/user/upload/avatar", uploadData, {
+      const res = await axios.post("https://gitnest-backend-l3tu.onrender.com/v1/user/upload/avatar", uploadData, {
         withCredentials: true,
       });
 
