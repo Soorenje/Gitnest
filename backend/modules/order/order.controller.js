@@ -44,7 +44,7 @@ exports.checkout = asyncHandler(async (req, res) => {
     paymentStatus: "Pending",
   });
 
-  const mockPaymentUrl = `http://localhost:3000/mock-payment?authority=${authority}&amount=${finalPrice}`;
+  const mockPaymentUrl = `https://gitnest-eight.vercel.app/mock-payment?authority=${authority}&amount=${finalPrice}`;
 
   return res.json({
     success: true,
