@@ -3,7 +3,7 @@
 import "../globals.css";
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // 💡 useRouter اضافه شد
+import { usePathname, useRouter } from "next/navigation";
 import { Vazirmatn } from "next/font/google";
 import { 
   LayoutDashboard, 
@@ -20,9 +20,10 @@ import {
   Ticket,
   Percent,
   LucideIcon,
-  Layers
+  Layers,
+  Award // 💡 آیکون آزمون اضافه شد
 } from "lucide-react";
-import { Toaster, toast } from "sonner"; // 💡 toast اضافه شد
+import { Toaster, toast } from "sonner"; 
 
 const vazir = Vazirmatn({ subsets: ["arabic"] });
 
@@ -36,7 +37,7 @@ type SidebarItem = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter(); // 💡 تعریف روتر
+  const router = useRouter(); 
 
   const adminLinks: SidebarItem[] = [
     { title: "پیشخوان", href: "/admin", icon: LayoutDashboard },
@@ -56,9 +57,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { title: "تنظیمات پروفایل", href: "/student/settings", icon: Settings },
   ];
 
+  // 💡 منوی مدیریت آزمون‌ها به پنل مدرس اضافه شد
   const instructorLinks: SidebarItem[] = [
     { title: "پیشخوان مدرس", href: "/instructor", icon: LayoutDashboard },
     { title: "دوره‌های من", href: "/instructor/courses", icon: BookOpen },
+    { title: "مدیریت آزمون‌ها", href: "/instructor/exams", icon: Award },
     { title: "دانشجویان من", href: "/instructor/users", icon: Users },
     //{ title: "تیکت‌های آموزشی", href: "/instructor/tickets", icon: MessageSquare, badge: 2 },
     //{ title: "کیف پول و تسویه", href: "/instructor/wallet", icon: Mail },
@@ -77,15 +80,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? "مدرس دوره" 
     : "مدیر کل سیستم";
 
-  // 💡 تابع خروج از حساب کاربری
   const handleLogout = () => {
-    // پاک کردن کوکی یا توکن ذخیره شده در لوکال استوریج (اگر استفاده میکنید)
-    localStorage.removeItem("token"); // در صورت استفاده از توکن
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; // در صورت استفاده از کوکی
+    localStorage.removeItem("token"); 
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; 
     
     toast.success("با موفقیت از سیستم خارج شدید");
     
-    // هدایت کاربر به صفحه لاگین (یا صفحه اصلی)
     router.push("/login");
   };
 
@@ -112,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="text-xs font-medium text-zinc-500 mb-4 px-2">منوی دسترسی</div>
               {sidebarLinks.map((link) => {
                 const Icon = link.icon;
-                const isActive = pathname === link.href;
+                const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
 
                 return (
                   <Link 
@@ -140,7 +140,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
 
             <div className="p-4 border-t border-white/5">
-              {/* 💡 دکمه لاگ‌اوت با اتصال به تابع */}
               <button 
                 onClick={handleLogout}
                 className="flex items-center gap-3 px-3 py-3 w-full rounded-xl text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium"
