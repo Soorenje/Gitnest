@@ -12,6 +12,7 @@ const orderRouter = require("./modules/order/order.route");
 const discountRouter = require("./modules/discount/discount.route");
 const commentRouter = require("./modules/comment/comment.route");
 const newsletterRouter = require("./modules/newsletter/newsletter.route");
+const examRouter = require("./modules/exam/exam.router");
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/v1/order", orderRouter);
 app.use("/v1/discount", discountRouter);
 app.use("/v1/comment", commentRouter);
 app.use("/v1/newsletter", newsletterRouter);
+app.use("/v1/exam", examRouter);
 
 app.use((err, req, res, next) => {
   statusCode = err.statusCode || 500;
