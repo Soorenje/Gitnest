@@ -22,10 +22,11 @@ export default function Navbar() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // 💡 بخش مقالات حذف شد
+  // 💡 بخش مقالات حذف شد و "آزمون‌ها" اضافه شد
   const navItems = [
     { title: "خانه", href: "/" },
     { title: "دوره‌ها", href: "/courses" },
+    { title: "آزمون‌ها", href: "/exams" }, // <-- اضافه شدن لینک آزمون‌ها
     { title: "درباره ما", href: "/about" },
     { title: "تماس با ما", href: "/contact" },
   ];
@@ -68,7 +69,6 @@ export default function Navbar() {
     }
   };
 
-  // 💡 تابع کمکی برای تعیین مسیر درست پنل
   const getDashboardRoute = (role: string) => {
     if (role === 'Admin') return '/admin';
     if (role === 'Instructor') return '/instructor';
@@ -90,7 +90,7 @@ export default function Navbar() {
 
             <nav className="hidden md:flex items-center gap-6 lg:gap-8">
               {navItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
                   <Link
                     key={item.href}
@@ -129,7 +129,6 @@ export default function Navbar() {
                         {user.name || user.username} عزیز، خوش آمدید
                       </div>
                       
-                      {/* 💡 اصلاح مسیر پنل */}
                       <Link 
                         href={getDashboardRoute(user.role)}
                         className="flex items-center justify-end gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5 rounded-xl transition-colors"
@@ -178,7 +177,6 @@ export default function Navbar() {
                     <span className="text-zinc-400 text-xs">{user.role}</span>
                   </div>
                 </div>
-                {/* 💡 اصلاح مسیر پنل */}
                 <Link 
                   href={getDashboardRoute(user.role)}
                   onClick={() => setIsOpen(false)}
@@ -191,7 +189,7 @@ export default function Navbar() {
 
             <div className="flex flex-col gap-2">
               {navItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
                   <Link
                     key={item.href}
