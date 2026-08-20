@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Search, Edit2, Trash2, Clock, BookOpen, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { apiFetch } from "./../../../../utils/apiFetch"; // مسیر apiFetch خودت رو چک کن
+import { apiFetch } from "./../../../../utils/apiFetch"; 
 import { useRouter } from "next/navigation";
 
 export default function InstructorExamsPage() {
@@ -31,15 +31,16 @@ export default function InstructorExamsPage() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // 💡 آدرس API دریافت دوره‌های مدرس رو بر اساس بک‌اند خودت تنظیم کن
-        // فرض می‌کنیم درخواستی به مسیر دوره‌ها می‌زنیم
-        const res = await apiFetch("/course"); 
+        // 💡 اصلاح مهم: فراخوانی روت اختصاصی مدرس برای دریافت دوره‌های خودش
+        const res = await apiFetch("/course/instructor/courses"); 
+        
         if (res.ok) {
           const data = await res.json();
           // بررسی ساختار ریسپانس بک‌اند
           const coursesList = data.data?.courses || data.data || [];
           setCourses(coursesList);
           
+          // انتخاب پیش‌فرض اولین دوره برای لود شدن آزمون‌های آن
           if (coursesList.length > 0) {
             setSelectedCourseId(coursesList[0]._id);
             setFormData(prev => ({ ...prev, course: coursesList[0]._id }));
