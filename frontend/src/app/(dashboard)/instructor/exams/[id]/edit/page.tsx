@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowRight, Save, Plus, Trash2, Loader2, 
-  Settings, CheckCircle2, HelpCircle 
+  Settings, HelpCircle, X 
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { apiFetch } from "../../../../../../utils/apiFetch"; // مسیر دقیق apiFetch خودت را چک کن
-import QuestionModal from "../../../../../../components/exams/QuestionModal"; // مسیر دقیق کامپوننت را چک کن
+import { apiFetch } from "../../../../../../utils/apiFetch"; 
 
 export default function ExamEditorPage() {
   const params = useParams();
@@ -24,28 +23,34 @@ export default function ExamEditorPage() {
   // استیت‌های مُدال سوال جدید
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const [questionForm, setQuestionForm] = useState({
+    title: "",
+    options: ["", "", "", ""], // ۴ گزینه پیش‌فرض
+    correctAnswer: 0,
+    points: 1
+  });
 
-  // ۱. دریافت اطلاعات آزمون و سوالات در زمان لود صفحه
-  useEffect(() => {
-    const fetchExamData = async () => {
-      try {
-        const res = await apiFetch(`/exam/${examId}`);
+  // ۱. تابع دریافت اطلاعات آزمون
+  const fetchExamData = useCallback(async () => {
+    try {
+      const res = await apiFetch(`/exam/${examId}`);
+      if (res.ok) {
         const data = await res.json();
-        
-        if (res.ok) {
-          setExam(data.data);
-        } else {
-          toast.error(data.message || "آزمون یافت نشد");
-          router.push("/instructor/exams");
-        }
-      } catch (error) {
-        toast.error("خطا در برقراری ارتباط با سرور");
-      } finally {
-        setIsLoading(false);
+        setExam(data.data || data);
+      } else {
+        toast.error("آزمون یافت نشد");
+        router.push("/instructor/exams");
       }
-    };
-    if (examId) fetchExamData();
+    } catch (error) {
+      toast.error("خطا در دریافت اطلاعات آزمون از سرور");
+    } finally {
+      setIsLoading(false);
+    }
   }, [examId, router]);
+
+  useEffect(() => {
+    if (examId) fetchExamData();
+  }, [fetchExamData, examId]);
 
   // ۲. هندل کردن ذخیره تنظیمات پایه آزمون
   const handleUpdateExam = async (e: React.FormEvent) => {
@@ -65,8 +70,7 @@ export default function ExamEditorPage() {
       if (res.ok) {
         toast.success("تنظیمات آزمون با موفقیت ذخیره شد");
       } else {
-        const data = await res.json();
-        toast.error(data.message || "خطا در ذخیره تنظیمات");
+        toast.error("خطا در ذخیره تنظیمات");
       }
     } catch (error) {
       toast.error("ارتباط با سرور قطع شد");
@@ -75,41 +79,50 @@ export default function ExamEditorPage() {
     }
   };
 
-  // ۳. هندلر ارسال سوال جدید به بک‌اند (اصلاح شده)
-  // 💡 حالا این تابع دیتای تمیز را مستقیم از کامپوننت QuestionModal می‌گیرد
-  const handleSaveQuestion = async (questionData: any) => {
+  // ۳. هندلر تغییر مقادیر گزینه‌ها
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...questionForm.options];
+    newOptions[index] = value;
+    setQuestionForm({ ...questionForm, options: newOptions });
+  };
+
+  // ۴. هندلر ارسال سوال جدید
+  const handleSaveQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // اعتبارسنجی فرانت‌اند
+    if (!questionForm.title.trim() || questionForm.options.some(opt => !opt.trim())) {
+      toast.error("لطفا صورت سوال و تمام ۴ گزینه را پر کنید");
+      return;
+    }
+
     setIsAddingQuestion(true);
     try {
       const res = await apiFetch(`/exam/${examId}/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // 💡 ارسال دقیق دیتای دریافت شده
-        body: JSON.stringify(questionData), 
+        body: JSON.stringify(questionForm), // 💡 ارسال مستقیم دیتای استیت
       });
-
-      const data = await res.json();
 
       if (res.ok) {
         toast.success("سوال با موفقیت اضافه شد");
-        // آپدیت کردن استیت آزمون برای نمایش فوری سوال جدید در لیست
-        setExam({
-          ...exam,
-          questions: [...(exam.questions || []), data.data]
-        });
-        
-        // بستن مُدال
         setIsQuestionModalOpen(false);
+        // ریست کردن فرم برای سوال بعدی
+        setQuestionForm({ title: "", options: ["", "", "", ""], correctAnswer: 0, points: 1 });
+        // آپدیت لیست سوالات از سرور
+        fetchExamData();
       } else {
+        const data = await res.json();
         toast.error(data.message || "خطا در ثبت سوال");
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("ارتباط با سرور قطع شد");
     } finally {
       setIsAddingQuestion(false);
     }
   };
 
-  // ۴. هندلر حذف سوال (اختیاری برای تکمیل شدن پنل)
+  // ۵. هندلر حذف سوال
   const handleDeleteQuestion = async (questionId: string) => {
     if (!window.confirm("آیا از حذف این سوال مطمئن هستید؟")) return;
     
@@ -119,10 +132,7 @@ export default function ExamEditorPage() {
       });
       if (res.ok) {
         toast.success("سوال حذف شد");
-        setExam({
-          ...exam,
-          questions: exam.questions.filter((q: any) => q._id !== questionId)
-        });
+        fetchExamData(); // رفرش لیست
       }
     } catch (error) {
       toast.error("خطا در حذف سوال");
@@ -135,7 +145,6 @@ export default function ExamEditorPage() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20 font-sans">
-      {/* Topbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white/[0.02] border border-white/5 rounded-3xl p-4 md:p-6 shadow-lg">
         <div className="flex items-center gap-4">
           <Link href="/instructor/exams" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors">
@@ -149,7 +158,7 @@ export default function ExamEditorPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* ستون راست: تنظیمات آزمون */}
+        {/* ستون تنظیمات */}
         <div className="w-full lg:w-1/3 shrink-0">
           <form onSubmit={handleUpdateExam} className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sticky top-28 space-y-5">
             <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
@@ -185,7 +194,7 @@ export default function ExamEditorPage() {
           </form>
         </div>
 
-        {/* ستون چپ: لیست سوالات */}
+        {/* ستون لیست سوالات */}
         <div className="flex-1 space-y-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-white flex items-center gap-2"><HelpCircle size={24} className="text-purple-400"/> سوالات آزمون</h3>
@@ -230,13 +239,60 @@ export default function ExamEditorPage() {
         </div>
       </div>
 
-      {/* کامپوننت مُدال اضافه کردن سوال */}
-      <QuestionModal 
-        isOpen={isQuestionModalOpen} 
-        onClose={() => setIsQuestionModalOpen(false)} 
-        onSave={handleSaveQuestion} 
-        isSaving={isAddingQuestion} 
-      />
+      {/* مُدال ایجاد سوال یکپارچه شده */}
+      {isQuestionModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0a1024] border border-white/10 rounded-3xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02] shrink-0">
+              <h3 className="text-lg font-bold text-white">طراحی سوال جدید</h3>
+              <button onClick={() => setIsQuestionModalOpen(false)} className="text-zinc-500 hover:text-white p-1.5 rounded-lg"><X size={20} /></button>
+            </div>
+            
+            <form onSubmit={handleSaveQuestion} className="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">صورت سوال *</label>
+                <textarea required rows={3} value={questionForm.title} onChange={(e) => setQuestionForm({...questionForm, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 resize-none custom-scrollbar" placeholder="مثلاً: کاربرد هوک useEffect چیست؟"></textarea>
+              </div>
+              
+              <div className="space-y-4 border-t border-white/5 pt-4">
+                <label className="block text-xs font-medium text-zinc-400">گزینه‌ها (پاسخ صحیح را انتخاب کنید)</label>
+                {questionForm.options.map((opt, idx) => (
+                  <div key={idx} className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${questionForm.correctAnswer === idx ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 bg-white/5'}`}>
+                    <input 
+                      type="radio" 
+                      name="correctAnswer" 
+                      checked={questionForm.correctAnswer === idx} 
+                      onChange={() => setQuestionForm({...questionForm, correctAnswer: idx})}
+                      className="w-4 h-4 ml-2 accent-green-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-zinc-500 w-5">{idx + 1}.</span>
+                    <input 
+                      required 
+                      type="text" 
+                      value={opt} 
+                      onChange={(e) => handleOptionChange(idx, e.target.value)} 
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium text-white focus:ring-0" 
+                      placeholder={`متن گزینه ${idx + 1}`} 
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-white/5 pt-4">
+                <label className="block text-xs font-medium text-zinc-400 mb-2">بارم (نمره) سوال</label>
+                <input type="number" min="0.5" step="0.5" value={questionForm.points} onChange={(e) => setQuestionForm({...questionForm, points: Number(e.target.value)})} className="w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500 text-center" />
+              </div>
+
+              <div className="mt-4 flex gap-3 shrink-0">
+                <button type="submit" disabled={isAddingQuestion} className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold flex justify-center items-center">
+                  {isAddingQuestion ? <Loader2 size={18} className="animate-spin" /> : "ذخیره سوال"}
+                </button>
+                <button type="button" onClick={() => setIsQuestionModalOpen(false)} className="px-6 py-3.5 rounded-xl bg-white/5 text-zinc-300 text-sm font-medium hover:bg-white/10 transition-colors">انصراف</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
