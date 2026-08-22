@@ -31,23 +31,24 @@ export default function InstructorExamsPage() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // 💡 اصلاح مهم: فراخوانی روت اختصاصی مدرس برای دریافت دوره‌های خودش
+        // درخواست به آدرس درست (با پیشوند course)
         const res = await apiFetch("/course/instructor/courses"); 
         
         if (res.ok) {
           const data = await res.json();
-          // بررسی ساختار ریسپانس بک‌اند
-          const coursesList = data.data?.courses || data.data || [];
+          // دریافت مستقیم دیتا از ریسپانس بک‌اند
+          const coursesList = data.data || [];
           setCourses(coursesList);
           
-          // انتخاب پیش‌فرض اولین دوره برای لود شدن آزمون‌های آن
           if (coursesList.length > 0) {
             setSelectedCourseId(coursesList[0]._id);
             setFormData(prev => ({ ...prev, course: coursesList[0]._id }));
           }
+        } else {
+            toast.error("خطا در دریافت اطلاعات دوره‌ها از سرور");
         }
       } catch (error) {
-        toast.error("خطا در دریافت لیست دوره‌ها");
+        toast.error("ارتباط با سرور برقرار نشد");
       } finally {
         setIsLoading(false);
       }
