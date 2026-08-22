@@ -7,9 +7,24 @@ const isValidIdMiddleware = require("../../middlewares/isValidId");
 
 const router = express.Router();
 
+router.route("/").get(courseController.getAll);
+
 router
   .route("/admin/courses")
   .get(authMiddleware, isAdminMiddleware, courseController.getAdminCourses);
+
+router
+  .route("/instructor/courses")
+  .get(
+    authMiddleware,
+    isInstructorMiddleware,
+    courseController.getInstructorCourses,
+  )
+  .post(authMiddleware, isInstructorMiddleware, courseController.create);
+
+router
+  .route("/upload/cover")
+  .post(authMiddleware, isInstructorMiddleware, courseController.uploadCover);
 
 router
   .route("/admin/courses/:id/status")
@@ -30,19 +45,5 @@ router
   );
 
 router.route("/:id").get(isValidIdMiddleware(), courseController.getOne);
-router
-  .route("/instructor/courses")
-  .get(
-    authMiddleware,
-    isInstructorMiddleware,
-    courseController.getInstructorCourses,
-  )
-  .post(authMiddleware, isInstructorMiddleware, courseController.create);
-
-router.route("/").get(courseController.getAll);
-
-router
-  .route("/upload/cover")
-  .post(authMiddleware, isInstructorMiddleware, courseController.uploadCover);
 
 module.exports = router;
