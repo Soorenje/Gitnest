@@ -18,7 +18,9 @@ export default function ExamsListPage() {
         const res = await apiFetch("/exam"); // این آدرس به کنترلر getExams وصل می‌شود
         if (res.ok) {
           const data = await res.json();
-          setExams(data.data || []);
+          // 💡 اصلاح کلیدی: در نظر گرفتن هر دو ساختار احتمالی ریسپانس
+          const examsList = Array.isArray(data) ? data : (data.data || []);
+          setExams(examsList);
         }
       } catch (error) {
         console.error("Failed to fetch exams:", error);
