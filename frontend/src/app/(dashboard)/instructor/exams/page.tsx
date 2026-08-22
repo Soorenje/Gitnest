@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit2, Trash2, Clock, BookOpen, Loader2, X, AlertTriangle } from "lucide-react";
+import { Plus, Edit2, Clock, BookOpen, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { apiFetch } from "./../../../../utils/apiFetch"; 
@@ -16,9 +16,6 @@ export default function InstructorExamsPage() {
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 💡 استیت مخصوص دیباگ و نمایش ارورهای سرور روی صفحه
-  const [debugError, setDebugError] = useState<string | null>(null);
-
   // استیت‌های مُدال ایجاد آزمون
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -30,42 +27,27 @@ export default function InstructorExamsPage() {
     description: ""
   });
 
-  // ۱. دریافت دوره‌های مدرس در زمان لود صفحه (با سیستم دیباگ خشن!)
+  // ۱. دریافت دوره‌های مدرس
   useEffect(() => {
     const fetchCourses = async () => {
-      setDebugError(null); // ریست کردن ارور
       try {
         const res = await apiFetch("/course/instructor/courses"); 
-        
-        if (!res.ok) {
-          // اگر وضعیت ریسپانس 200 نبود، متن ارور را از سرور می‌گیریم
-          const errorText = await res.text();
-          setDebugError(`[وضعیت: ${res.status}] سرور اجازه نداد! پیام سرور: ${errorText}`);
-          setIsLoading(false);
-          return;
+        if (res.ok) {
+          const data = await res.json();
+          
+          // 💡 کلید حل مشکل: اگر دیتا مستقیماً آرایه بود همان را استفاده کن، وگرنه داخل کلید data بگرد
+          const coursesList = Array.isArray(data) ? data : (data.data || []);
+          
+          setCourses(coursesList);
+          
+          // انتخاب پیش‌فرض اولین دوره
+          if (coursesList.length > 0) {
+            setSelectedCourseId(coursesList[0]._id);
+            setFormData(prev => ({ ...prev, course: coursesList[0]._id }));
+          }
         }
-
-        const data = await res.json();
-        
-        // اگر دیتا آمد اما کلید data وجود نداشت
-        if (!data || !data.data) {
-          setDebugError(`درخواست موفق بود اما ساختار دیتا اشتباه است! دیتای دریافتی: ${JSON.stringify(data)}`);
-          setIsLoading(false);
-          return;
-        }
-
-        const coursesList = data.data;
-        setCourses(coursesList);
-        
-        if (coursesList.length === 0) {
-           setDebugError(`درخواست کاملاً موفق بود، اما بک‌اند لیست خالی [] برگرداند. یعنی شما به عنوان این مدرس هیچ دوره‌ای نساخته‌اید، یا سرور نتوانسته آیدی شما را از توکن/کوکی بخواند.`);
-        } else {
-          setSelectedCourseId(coursesList[0]._id);
-          setFormData(prev => ({ ...prev, course: coursesList[0]._id }));
-        }
-
-      } catch (error: any) {
-        setDebugError(`ارور سمت فرانت‌اند (Network/CORS): ${error.message || error}`);
+      } catch (error) {
+        toast.error("خطا در دریافت لیست دوره‌ها");
       } finally {
         setIsLoading(false);
       }
@@ -73,7 +55,7 @@ export default function InstructorExamsPage() {
     fetchCourses();
   }, []);
 
-  // ۲. دریافت آزمون‌ها
+  // ۲. دریافت آزمون‌های یک دوره
   useEffect(() => {
     if (!selectedCourseId) return;
 
@@ -83,12 +65,13 @@ export default function InstructorExamsPage() {
         const res = await apiFetch(`/exam/course/${selectedCourseId}`);
         if (res.ok) {
           const data = await res.json();
-          setExams(data.data || []);
+          const examsList = Array.isArray(data) ? data : (data.data || []);
+          setExams(examsList);
         } else {
           setExams([]);
         }
       } catch (error) {
-        console.error(error);
+        toast.error("خطا در دریافت آزمون‌ها");
       } finally {
         setIsLoading(false);
       }
@@ -96,6 +79,7 @@ export default function InstructorExamsPage() {
     fetchExams();
   }, [selectedCourseId]);
 
+  // ۳. هندل کردن فرم ساخت آزمون
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.slug || !formData.course) {
@@ -114,14 +98,15 @@ export default function InstructorExamsPage() {
       const result = await res.json();
 
       if (res.ok) {
-        toast.success("آزمون ایجاد شد");
+        toast.success("آزمون با موفقیت ایجاد شد!");
         setIsModalOpen(false);
-        router.push(`/instructor/exams/${result.data._id}/edit`);
+        const examId = result._id || result.data?._id;
+        router.push(`/instructor/exams/${examId}/edit`);
       } else {
         toast.error(result.message || "خطا در ساخت آزمون");
       }
     } catch (error) {
-      toast.error("مشکل ارتباط با سرور");
+      toast.error("مشکل در ارتباط با سرور");
     } finally {
       setIsCreating(false);
     }
@@ -129,20 +114,6 @@ export default function InstructorExamsPage() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-      
-      {/* 💡 بخش نمایش دیباگ (فقط وقتی اروری وجود داشته باشد نشان داده می‌شود) */}
-      {debugError && (
-        <div className="mb-8 p-6 bg-red-500/10 border-2 border-red-500/50 rounded-2xl animate-pulse">
-          <div className="flex items-center gap-3 text-red-500 font-bold mb-3">
-            <AlertTriangle size={24} />
-            <h3 className="text-lg">دیباگر سیستم: یک مشکل کشف شد!</h3>
-          </div>
-          <p className="text-red-200 text-sm font-mono leading-relaxed bg-black/50 p-4 rounded-xl border border-red-500/30">
-            {debugError}
-          </p>
-        </div>
-      )}
-
       {/* هدر صفحه */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white/[0.02] border border-white/5 rounded-3xl p-6 shadow-lg">
         <div>
@@ -165,7 +136,6 @@ export default function InstructorExamsPage() {
           onChange={(e) => setSelectedCourseId(e.target.value)}
           className="flex-1 max-w-xs bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
         >
-          <option value="" disabled>انتخاب کنید...</option>
           {courses.map(course => (
             <option key={course._id} value={course._id}>{course.name || course.title}</option>
           ))}
@@ -179,6 +149,7 @@ export default function InstructorExamsPage() {
         <div className="text-center py-20 bg-white/[0.02] border border-white/5 rounded-3xl">
           <BookOpen size={48} className="mx-auto text-zinc-600 mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">هیچ آزمونی برای این دوره یافت نشد</h3>
+          <p className="text-sm text-zinc-500">برای شروع، اولین آزمون خود را ایجاد کنید.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -186,6 +157,13 @@ export default function InstructorExamsPage() {
             <div key={exam._id} className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all group">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-bold text-white line-clamp-1">{exam.title}</h3>
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${exam.isPublished ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"}`}>
+                  {exam.isPublished ? "منتشر شده" : "پیش‌نویس"}
+                </span>
+              </div>
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-2 text-sm text-zinc-400"><Clock size={16} /> زمان: {exam.timeLimit > 0 ? `${exam.timeLimit} دقیقه` : "بدون محدودیت"}</div>
+                <div className="flex items-center gap-2 text-sm text-zinc-400"><BookOpen size={16} /> سوالات: {exam.questions?.length || 0} سوال</div>
               </div>
               <div className="flex gap-2 mt-auto">
                 <Link href={`/instructor/exams/${exam._id}/edit`} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-sm font-medium hover:bg-blue-500/20 transition-colors">
@@ -197,7 +175,7 @@ export default function InstructorExamsPage() {
         </div>
       )}
 
-      {/* مُدال */}
+      {/* مُدال ایجاد آزمون */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-[#0a1024] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 overflow-hidden">
@@ -209,13 +187,13 @@ export default function InstructorExamsPage() {
             <form onSubmit={handleCreateExam} className="p-6 flex flex-col gap-5">
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">عنوان آزمون *</label>
-                <input required type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" />
+                <input required type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" placeholder="مثال: آزمون میان‌ترم ریکت" />
               </div>
               
               <div className="flex gap-4">
                 <div className="flex-[2]">
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">نامک (Slug) *</label>
-                  <input required type="text" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" />
+                  <input required type="text" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" placeholder="react-midterm" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">زمان (دقیقه)</label>
@@ -235,7 +213,7 @@ export default function InstructorExamsPage() {
 
               <div className="mt-2 flex gap-3">
                 <button type="submit" disabled={isCreating} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium flex justify-center items-center">
-                  ایجاد و افزودن سوالات
+                  {isCreating ? <Loader2 size={18} className="animate-spin" /> : "ایجاد و افزودن سوالات"}
                 </button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-3 rounded-xl bg-white/5 text-zinc-300 text-sm hover:bg-white/10 transition-colors">انصراف</button>
               </div>
