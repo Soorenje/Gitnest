@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowRight, Save, Plus, Trash2, Loader2, 
-  Settings, CheckCircle2, X, HelpCircle, GripVertical
+  Settings, CheckCircle2, HelpCircle 
 } from "lucide-react";
-import QuestionModal from "../../../../../../components/exams/QuestionModal";
 import Link from "next/link";
 import { toast } from "sonner";
-import { apiFetch } from "../../../../../../utils/apiFetch";
+import { apiFetch } from "../../../../../../utils/apiFetch"; // مسیر دقیق apiFetch خودت را چک کن
+import QuestionModal from "../../../../../../components/exams/QuestionModal"; // مسیر دقیق کامپوننت را چک کن
 
 export default function ExamEditorPage() {
   const params = useParams();
@@ -24,12 +24,6 @@ export default function ExamEditorPage() {
   // استیت‌های مُدال سوال جدید
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
-  const [questionForm, setQuestionForm] = useState({
-    title: "",
-    options: ["", "", "", ""], // 4 گزینه پیش‌فرض
-    correctAnswer: 0, // ایندکس گزینه درست (0 تا 3)
-    points: 1
-  });
 
   // ۱. دریافت اطلاعات آزمون و سوالات در زمان لود صفحه
   useEffect(() => {
@@ -81,22 +75,16 @@ export default function ExamEditorPage() {
     }
   };
 
-  // ۳. هندلر تغییر مقادیر گزینه‌ها
-  const handleOptionChange = (index: number, value: string) => {
-    const newOptions = [...questionForm.options];
-    newOptions[index] = value;
-    setQuestionForm({ ...questionForm, options: newOptions });
-  };
-
-  // ۴. هندلر ارسال سوال جدید به بک‌اند
-  const handleSaveQuestion = async (e: React.FormEvent) => {    
-
+  // ۳. هندلر ارسال سوال جدید به بک‌اند (اصلاح شده)
+  // 💡 حالا این تابع دیتای تمیز را مستقیم از کامپوننت QuestionModal می‌گیرد
+  const handleSaveQuestion = async (questionData: any) => {
     setIsAddingQuestion(true);
     try {
       const res = await apiFetch(`/exam/${examId}/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(questionForm),
+        // 💡 ارسال دقیق دیتای دریافت شده
+        body: JSON.stringify(questionData), 
       });
 
       const data = await res.json();
@@ -109,9 +97,8 @@ export default function ExamEditorPage() {
           questions: [...(exam.questions || []), data.data]
         });
         
-        // ریست کردن فرم
+        // بستن مُدال
         setIsQuestionModalOpen(false);
-        setQuestionForm({ title: "", options: ["", "", "", ""], correctAnswer: 0, points: 1 });
       } else {
         toast.error(data.message || "خطا در ثبت سوال");
       }
@@ -122,12 +109,32 @@ export default function ExamEditorPage() {
     }
   };
 
+  // ۴. هندلر حذف سوال (اختیاری برای تکمیل شدن پنل)
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!window.confirm("آیا از حذف این سوال مطمئن هستید؟")) return;
+    
+    try {
+      const res = await apiFetch(`/exam/${examId}/questions/${questionId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success("سوال حذف شد");
+        setExam({
+          ...exam,
+          questions: exam.questions.filter((q: any) => q._id !== questionId)
+        });
+      }
+    } catch (error) {
+      toast.error("خطا در حذف سوال");
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-[60vh]"><Loader2 className="animate-spin text-blue-500" size={40}/></div>;
   }
 
   return (
-    <div className="animate-in fade-in duration-500 pb-20">
+    <div className="animate-in fade-in duration-500 pb-20 font-sans">
       {/* Topbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white/[0.02] border border-white/5 rounded-3xl p-4 md:p-6 shadow-lg">
         <div className="flex items-center gap-4">
@@ -152,12 +159,12 @@ export default function ExamEditorPage() {
             
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-1.5">عنوان آزمون</label>
-              <input type="text" value={exam?.title || ""} onChange={(e) => setExam({...exam, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500" />
+              <input type="text" value={exam?.title || ""} onChange={(e) => setExam({...exam, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-medium focus:border-blue-500 transition-colors" />
             </div>
 
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-1.5">زمان (دقیقه - 0 برای نامحدود)</label>
-              <input type="number" min="0" value={exam?.timeLimit || 0} onChange={(e) => setExam({...exam, timeLimit: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500" />
+              <input type="number" min="0" value={exam?.timeLimit || 0} onChange={(e) => setExam({...exam, timeLimit: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-medium focus:border-blue-500 transition-colors" />
             </div>
 
             <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
@@ -171,7 +178,7 @@ export default function ExamEditorPage() {
               </label>
             </div>
 
-            <button type="submit" disabled={isSavingBasic} className="w-full py-3 rounded-xl bg-blue-600/20 text-blue-400 text-sm font-medium hover:bg-blue-600/30 transition-all flex justify-center items-center gap-2 border border-blue-500/20">
+            <button type="submit" disabled={isSavingBasic} className="w-full py-3 rounded-xl bg-blue-600/20 text-blue-400 text-sm font-bold hover:bg-blue-600/30 transition-all flex justify-center items-center gap-2 border border-blue-500/20">
               {isSavingBasic ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               ذخیره تغییرات
             </button>
@@ -182,14 +189,14 @@ export default function ExamEditorPage() {
         <div className="flex-1 space-y-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-white flex items-center gap-2"><HelpCircle size={24} className="text-purple-400"/> سوالات آزمون</h3>
-            <button onClick={() => setIsQuestionModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:shadow-lg transition-all">
+            <button onClick={() => setIsQuestionModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold hover:shadow-lg transition-all">
               <Plus size={16} /> سوال جدید
             </button>
           </div>
 
           {!exam?.questions || exam.questions.length === 0 ? (
             <div className="text-center py-16 bg-white/[0.01] rounded-3xl border border-dashed border-white/10">
-              <p className="text-zinc-500">هنوز هیچ سوالی برای این آزمون طراحی نکرده‌اید.</p>
+              <p className="text-zinc-500 font-medium">هنوز هیچ سوالی برای این آزمون طراحی نکرده‌اید.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -201,14 +208,14 @@ export default function ExamEditorPage() {
                       <h4 className="text-white text-sm md:text-base leading-relaxed font-medium">{question.title}</h4>
                     </div>
                     <div className="shrink-0 ml-4 flex gap-2 items-center">
-                      <span className="text-xs font-medium text-purple-400 bg-purple-500/10 px-2 py-1 rounded-md">{question.points} نمره</span>
-                      <button className="text-red-400/50 hover:text-red-400 transition-colors p-1"><Trash2 size={16}/></button>
+                      <span className="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-md border border-purple-500/20">{question.points} نمره</span>
+                      <button onClick={() => handleDeleteQuestion(question._id)} className="text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors p-1.5 rounded-lg"><Trash2 size={16}/></button>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
                     {question.options.map((opt: string, optIdx: number) => (
-                      <div key={optIdx} className={`p-3 rounded-xl border text-sm flex items-center gap-3 transition-colors ${question.correctAnswer === optIdx ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-white/[0.02] border-white/5 text-zinc-400'}`}>
+                      <div key={optIdx} className={`p-3 rounded-xl border text-sm font-medium flex items-center gap-3 transition-colors ${question.correctAnswer === optIdx ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-white/[0.02] border-white/5 text-zinc-400'}`}>
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${question.correctAnswer === optIdx ? 'border-green-500' : 'border-zinc-600'}`}>
                           {question.correctAnswer === optIdx && <div className="w-2 h-2 bg-green-500 rounded-full" />}
                         </div>
@@ -223,7 +230,7 @@ export default function ExamEditorPage() {
         </div>
       </div>
 
-      {/* مُدال افزودن سوال */}
+      {/* کامپوننت مُدال اضافه کردن سوال */}
       <QuestionModal 
         isOpen={isQuestionModalOpen} 
         onClose={() => setIsQuestionModalOpen(false)} 
