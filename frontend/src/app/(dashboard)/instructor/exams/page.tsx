@@ -66,7 +66,7 @@ export default function InstructorExamsPage() {
     const fetchExams = async () => {
       setIsLoading(true);
       try {
-        const res = await apiFetch(`/exam/course/${selectedCourseId}`);
+        const res = await apiFetch(`/exam/instructor/course/${selectedCourseId}`);
         if (res.ok) {
           const data = await res.json();
           const examsList = Array.isArray(data) ? data : (data.data || []);
