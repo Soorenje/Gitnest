@@ -4,14 +4,15 @@ const AppError = require("../../utils/AppError");
 const asyncHandler = require("../../utils/asyncHandler");
 
 exports.getExams = asyncHandler(async (req, res, next) => {
-  const exams = await examModel.find({isPublished: true}).sort({ createdAt: -1 });
+  const exams = await examModel
+    .find({ isPublished: true })
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
     data: exams,
   });
 });
-
 
 exports.createExam = asyncHandler(async (req, res, next) => {
   const { title, slug, course, description, timeLimit } = req.body;
@@ -75,10 +76,25 @@ exports.getExamWithQuestions = asyncHandler(async (req, res, next) => {
   });
 });
 
+exports.getInstructorCourseExams = asyncHandler(async (req, res) => {
+  const { courseId } = req.params;
+
+  const exams = await examModel
+    .find({ course: courseId })
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json({
+    success: true,
+    data: exams,
+  });
+});
+
 exports.getCourseExams = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
 
-  const exams = await examModel.find({ course: courseId , isPublished: true }).sort({ createdAt: -1 });
+  const exams = await examModel
+    .find({ course: courseId, isPublished: true })
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
@@ -88,10 +104,10 @@ exports.getCourseExams = asyncHandler(async (req, res, next) => {
 
 exports.updateExam = asyncHandler(async (req, res, next) => {
   const { examId } = req.params;
-  
-  const updatedExam = await examModel.findByIdAndUpdate(examId, req.body, { 
-    new: true, 
-    runValidators: true 
+
+  const updatedExam = await examModel.findByIdAndUpdate(examId, req.body, {
+    new: true,
+    runValidators: true,
   });
 
   if (!updatedExam) throw new AppError("Exam not found", 404);
@@ -110,7 +126,7 @@ exports.deleteExam = asyncHandler(async (req, res, next) => {
   if (!exam) throw new AppError("Exam not found", 404);
 
   await questionModel.deleteMany({ exam: examId });
-  
+
   await exam.deleteOne();
 
   res.status(200).json({
@@ -120,10 +136,10 @@ exports.deleteExam = asyncHandler(async (req, res, next) => {
 });
 
 exports.getExamForStudent = asyncHandler(async (req, res, next) => {
-    const { examId } = req.params;
-    const user = req.user
+  const { examId } = req.params;
+  const user = req.user;
 
-    const exam = await examModel.findById(examId).populate({
+  const exam = await examModel.findById(examId).populate({
     path: "questions",
     options: { sort: { order: 1 } },
   });
@@ -131,19 +147,25 @@ exports.getExamForStudent = asyncHandler(async (req, res, next) => {
   if (!exam) throw new AppError("Exam not found", 404);
 
   if (!exam.isPublished) {
-    throw new AppError("This test has not yet been activated for students.", 403);
+    throw new AppError(
+      "This test has not yet been activated for students.",
+      403,
+    );
   }
 
   const isEnrolled = user.courses.some(
-    (courseId) => courseId.toString() === exam.course.toString()
+    (courseId) => courseId.toString() === exam.course.toString(),
   );
 
   if (!isEnrolled) {
-    throw new AppError("To take this exam, you must first register for the course", 403);
+    throw new AppError(
+      "To take this exam, you must first register for the course",
+      403,
+    );
   }
 
   res.status(200).json({
     success: true,
     data: exam,
   });
-})
+});

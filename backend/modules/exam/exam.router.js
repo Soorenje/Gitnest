@@ -9,8 +9,17 @@ const router = express.Router();
 
 router
   .route("/")
-  .get(examController.getExams) 
+  .get(examController.getExams)
   .post(authMiddleware, isInstructorMiddleware, examController.createExam);
+
+router
+  .route("/instructor/course/:courseId")
+  .get(
+    isValidIdMiddleware("courseId"),
+    authMiddleware,
+    isInstructorMiddleware,
+    examController.getInstructorCourseExams,
+  );
 
 router
   .route("/course/:courseId")
