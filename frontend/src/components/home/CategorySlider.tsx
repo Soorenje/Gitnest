@@ -19,9 +19,8 @@ import {
   Loader2
 } from "lucide-react";
 
-import { apiFetch } from "./../../utils/apiFetch"; // 💡 مسیر این فایل را در صورت نیاز اصلاح کنید
+import { apiFetch } from "./../../utils/apiFetch"; 
 
-// آرایه‌ای از استایل‌ها و آیکون‌های پیش‌فرض برای اختصاص به داده‌های بک‌اند
 const stylePresets = [
   { icon: FileCode2, color: "text-yellow-400", bgHover: "hover:shadow-yellow-500/10", borderHover: "group-hover:border-yellow-500/30", iconBg: "bg-yellow-500/10" },
   { icon: Globe, color: "text-orange-400", bgHover: "hover:shadow-orange-500/10", borderHover: "group-hover:border-orange-500/30", iconBg: "bg-orange-500/10" },
@@ -40,7 +39,7 @@ export default function CategorySlider() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await apiFetch("/category"); // 💡 مسیر روت بک‌اند را مطابقت دهید
+        const res = await apiFetch("/category"); 
         if (res.ok) {
           const result = await res.json();
           setCategories(result.data || []);
@@ -56,10 +55,9 @@ export default function CategorySlider() {
   }, []);
 
   return (
-    <section className="py-20 relative z-10">
+    <section className="py-16 md:py-20 relative z-10">
       <div className="container mx-auto px-4 max-w-7xl">
-        {/* هدر بخش */}
-        <div className="mb-12 text-center md:text-right">
+        <div className="mb-10 text-center md:text-right">
           <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
             دسته‌بندی دوره‌ها
           </h2>
@@ -77,43 +75,41 @@ export default function CategorySlider() {
         ) : (
           <Swiper
             modules={[Autoplay]}
-            loop={categories.length >= 5} // اگر تعداد کمتر از 5 بود، لوپ را غیرفعال می‌کنیم تا باگ نخورد
+            loop={categories.length >= 5} 
             grabCursor={true}
-            spaceBetween={24}
+            spaceBetween={16}
             className="pb-12 pt-4 px-2"
             autoplay={{
               delay: 2500,
               disableOnInteraction: false,
             }}
             breakpoints={{
-              320: { slidesPerView: 2 },
-              640: { slidesPerView: 3 },
-              1024: { slidesPerView: 5 },
+              320: { slidesPerView: 1.5, spaceBetween: 12 }, // تغییر برای موبایل
+              480: { slidesPerView: 2, spaceBetween: 16 },
+              768: { slidesPerView: 3, spaceBetween: 20 },
+              1024: { slidesPerView: 5, spaceBetween: 24 },
             }}
           >
             {categories.map((category, index) => {
-              // دریافت استایل تکرارشونده بر اساس ایندکس تا هرگز رنگ کم نیاوریم
               const style = stylePresets[index % stylePresets.length];
-              const Icon = style.icon || FolderOpen; // در صورت نبود آیکون، از پیش‌فرض استفاده می‌شود
+              const Icon = style.icon || FolderOpen; 
               
-              // دریافت تعداد دوره‌ها از فیلد مجازی که در بک‌اند populate شد
               const courseCount = category.courses ? category.courses.length : 0;
               
               return (
                 <SwiperSlide key={category._id}>
-                  {/* لینک داینامیک بر اساس slug (مثال: /courses?category=react) */}
                   <Link href={`/courses?category=${category.slug}`} className="block w-full">
-                    <div className={`group bg-white/[0.02] border border-white/5 rounded-3xl p-6 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:bg-white/[0.04] hover:-translate-y-2 shadow-lg ${style.bgHover}`}>
+                    <div className={`group bg-white/[0.02] border border-white/5 rounded-3xl p-5 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:bg-white/[0.04] hover:-translate-y-2 shadow-lg ${style.bgHover}`}>
                       
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 border border-transparent ${style.iconBg} ${style.color} ${style.borderHover}`}>
-                        <Icon size={32} />
+                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mb-4 md:mb-5 transition-transform duration-300 group-hover:scale-110 border border-transparent ${style.iconBg} ${style.color} ${style.borderHover}`}>
+                        <Icon size={28} className="md:w-8 md:h-8" />
                       </div>
 
-                      <h3 className="text-white font-bold text-base md:text-lg mb-1">
+                      <h3 className="text-white font-bold text-sm md:text-base mb-1 line-clamp-1">
                         {category.title}
                       </h3>
 
-                      <p className="text-zinc-500 text-xs md:text-sm">
+                      <p className="text-zinc-500 text-xs">
                         {courseCount} دوره
                       </p>
 

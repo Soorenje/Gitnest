@@ -36,85 +36,85 @@ export default function StudentCoursesPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">کتابخانه دوره‌های من</h2>
-          <p className="text-sm text-zinc-400">آرشیو تمام آموزش‌هایی که تا به امروز تهیه کرده‌اید.</p>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-1">کتابخانه دوره‌های من</h2>
+          <p className="text-xs md:text-sm text-zinc-400">آرشیو تمام آموزش‌هایی که تا به امروز تهیه کرده‌اید.</p>
         </div>
 
-        <div className="relative w-full lg:w-72">
+        <div className="relative w-full sm:w-64 md:w-72 mt-2 sm:mt-0">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
           <input 
             type="text" 
             placeholder="جستجو در دوره‌های من..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white/[0.02] border border-white/10 rounded-xl py-2.5 pr-10 pl-4 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all text-sm"
+            className="w-full bg-white/[0.02] border border-white/10 rounded-xl py-2.5 md:py-3 pr-10 pl-4 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all text-xs md:text-sm"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-8 bg-white/[0.02] border border-white/5 p-1 rounded-xl w-max overflow-x-auto max-w-full">
-        <div className="px-3 text-zinc-500 flex items-center gap-2 border-l border-white/10">
-          <Filter size={16} />
+      <div className="flex items-center gap-2 mb-6 md:mb-8 bg-white/[0.02] border border-white/5 p-1 rounded-xl w-max overflow-x-auto max-w-full scrollbar-hide">
+        <div className="px-2 md:px-3 text-zinc-500 flex items-center gap-2 border-l border-white/10">
+          <Filter size={14} className="md:w-4 md:h-4" />
         </div>
-        <button className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white whitespace-nowrap">
+        <button className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium bg-white/10 text-white whitespace-nowrap">
           همه دوره‌ها ({courses.length})
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative min-h-[300px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 relative min-h-[300px]">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#070b1a]/50">
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#070b1a]/50 backdrop-blur-sm rounded-3xl">
+            <Loader2 className="w-8 h-8 md:w-10 md:h-10 text-blue-500 animate-spin" />
           </div>
         )}
 
         {!isLoading && filteredCourses.length > 0 ? (
           filteredCourses.map((course, index) => (
-            <div key={course?._id || course?.id || index} className="bg-white/[0.02] border border-white/5 rounded-3xl p-5 flex flex-col h-full hover:bg-white/[0.04] transition-all group">
-              <div className="flex gap-4 mb-5">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center shrink-0">
+            <div key={course?._id || course?.id || index} className="bg-white/[0.02] border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col h-full hover:bg-white/[0.04] transition-all group">
+              <div className="flex gap-3 md:gap-4 mb-4 md:mb-5">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center shrink-0">
                   {course?.cover ? (
                     <img src={course.cover} alt={course?.name || "cover"} className="w-full h-full object-cover" />
                   ) : (
-                    <BookOpen className="text-zinc-500" />
+                    <BookOpen className="text-zinc-500 md:w-6 md:h-6" size={20} />
                   )}
                 </div>
                 <div>
                   <h4 className="text-white font-bold text-sm md:text-base mb-1 line-clamp-2 group-hover:text-blue-400 transition-colors">
                     {course?.name || "دوره بدون نام"}
                   </h4>
-                  <p className="text-xs text-zinc-500 mb-2">وضعیت: در جریان</p>
+                  <p className="text-[10px] md:text-xs text-zinc-500 mb-1.5 md:mb-2">وضعیت: در جریان</p>
                 </div>
               </div>
 
-              <div className="mb-6 flex-1">
-                <div className="flex items-center justify-between text-xs mb-2">
+              <div className="mb-5 md:mb-6 flex-1">
+                <div className="flex items-center justify-between text-[10px] md:text-xs mb-1.5 md:mb-2">
                   <span className="text-zinc-400">پیشرفت شما</span>
                   <span className="font-bold text-blue-400">۰٪</span>
                 </div>
-                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 md:h-2 bg-white/5 rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full" style={{ width: '0%' }}></div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/5 grid gap-3 mt-auto">
+              <div className="pt-3 md:pt-4 border-t border-white/5 grid gap-3 mt-auto">
                 <Link 
                   href={course?.href ? `/course/${course.href}` : "#"} 
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-500/20"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-500/20"
                 >
-                  <PlayCircle size={16} />
+                  <PlayCircle size={16} className="md:w-[18px] md:h-[18px]" />
                   ورود به دوره
                 </Link>
               </div>
             </div>
           ))
         ) : !isLoading && (
-          <div className="col-span-full py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-3xl flex flex-col items-center justify-center text-center">
-            <BookOpen size={48} className="text-zinc-700 mb-4" />
-            <h3 className="text-white font-medium mb-2">دوره‌ای یافت نشد</h3>
-            <p className="text-zinc-500 text-sm">موردی با این مشخصات وجود ندارد.</p>
+          <div className="col-span-full py-16 md:py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl md:rounded-3xl flex flex-col items-center justify-center text-center">
+            <BookOpen size={40} className="text-zinc-700 mb-3 md:mb-4 md:w-12 md:h-12" />
+            <h3 className="text-white font-medium mb-1.5 md:mb-2 text-sm md:text-base">دوره‌ای یافت نشد</h3>
+            <p className="text-zinc-500 text-xs md:text-sm">موردی با این مشخصات وجود ندارد.</p>
           </div>
         )}
       </div>
