@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Clock, BookOpen, Loader2, X } from "lucide-react";
+import { Plus, Edit2, Clock, BookOpen, Loader2, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { apiFetch } from "./../../../../utils/apiFetch"; 
@@ -15,6 +15,10 @@ export default function InstructorExamsPage() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 💡 استیت‌های باز و بسته شدن دراپ‌داون‌های سفارشی
+  const [isMainSelectOpen, setIsMainSelectOpen] = useState(false);
+  const [isModalSelectOpen, setIsModalSelectOpen] = useState(false);
 
   // استیت‌های مُدال ایجاد آزمون
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,7 +39,6 @@ export default function InstructorExamsPage() {
         if (res.ok) {
           const data = await res.json();
           
-          // 💡 دریافت ایمن لیست دوره‌ها (پشتیبانی از هر دو حالت آرایه یا آبجکت)
           const coursesList = Array.isArray(data) ? data : (data.data || []);
           
           setCourses(coursesList);
@@ -129,20 +132,42 @@ export default function InstructorExamsPage() {
         </button>
       </div>
 
-      {/* فیلتر دوره */}
-      <div className="mb-6 flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+      {/* فیلتر دوره (دراپ‌داون سفارشی) */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
         <label className="text-sm text-zinc-300 font-medium whitespace-nowrap">نمایش آزمون‌های دوره:</label>
-        {/* 💡 استایل‌های Select آپدیت شد */}
-        <select 
-          value={selectedCourseId}
-          onChange={(e) => setSelectedCourseId(e.target.value)}
-          className="flex-1 max-w-xs bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-medium focus:outline-none focus:border-blue-500 cursor-pointer appearance-none custom-select-icon"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 12px center', backgroundSize: '16px' }}
-        >
-          {courses.map(course => (
-            <option key={course._id} value={course._id} className="bg-[#0f1631] text-zinc-200 py-2">{course.name || course.title}</option>
-          ))}
-        </select>
+        
+        <div className="relative flex-1 max-w-xs">
+          <div 
+            onClick={() => setIsMainSelectOpen(!isMainSelectOpen)}
+            className="flex items-center justify-between w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-medium cursor-pointer hover:border-white/20 transition-colors"
+          >
+            <span className="truncate">
+              {courses.find(c => c._id === selectedCourseId)?.name || courses.find(c => c._id === selectedCourseId)?.title || "انتخاب کنید..."}
+            </span>
+            <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isMainSelectOpen ? 'rotate-180' : ''}`} />
+          </div>
+          
+          {isMainSelectOpen && (
+            <>
+              {/* پس‌زمینه نامرئی برای بستن منو با کلیک بیرون آن */}
+              <div className="fixed inset-0 z-40" onClick={() => setIsMainSelectOpen(false)}></div>
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#0a1024] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden py-1 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                {courses.map(course => (
+                  <div 
+                    key={course._id}
+                    onClick={() => {
+                      setSelectedCourseId(course._id);
+                      setIsMainSelectOpen(false);
+                    }}
+                    className={`px-4 py-3 text-sm cursor-pointer transition-colors ${selectedCourseId === course._id ? 'bg-blue-600/20 text-blue-400' : 'text-zinc-300 hover:bg-white/5 hover:text-white'}`}
+                  >
+                    {course.name || course.title}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* لیست آزمون‌ها */}
@@ -181,7 +206,7 @@ export default function InstructorExamsPage() {
       {/* مُدال ایجاد آزمون */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#0a1024] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 overflow-hidden">
+          <div className="bg-[#0a1024] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 overflow-visible flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
               <h3 className="text-lg font-bold text-white">ساخت آزمون جدید</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white p-1.5 rounded-lg"><X size={20} /></button>
@@ -204,25 +229,42 @@ export default function InstructorExamsPage() {
                 </div>
               </div>
 
-              <div>
+              {/* دراپ‌داون سفارشی مُدال */}
+              <div className="relative">
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">دوره مربوطه *</label>
-                {/* 💡 استایل‌های Select آپدیت شد */}
-                <select 
-                  required 
-                  value={formData.course} 
-                  onChange={(e) => setFormData({...formData, course: e.target.value})} 
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-blue-500 transition-colors cursor-pointer appearance-none"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 16px center', backgroundSize: '16px' }}
+                <div 
+                  onClick={() => setIsModalSelectOpen(!isModalSelectOpen)}
+                  className={`flex items-center justify-between w-full bg-white/5 border rounded-xl px-4 py-3 text-sm font-medium cursor-pointer transition-colors ${isModalSelectOpen ? 'border-blue-500' : 'border-white/10 hover:border-white/20'}`}
                 >
-                  <option value="" disabled className="bg-[#0f1631] text-zinc-500">انتخاب کنید...</option>
-                  {courses.map(course => (
-                    <option key={course._id} value={course._id} className="bg-[#0f1631] text-zinc-200">{course.name || course.title}</option>
-                  ))}
-                </select>
+                  <span className={formData.course ? "text-white" : "text-zinc-500"}>
+                    {formData.course ? (courses.find(c => c._id === formData.course)?.name || courses.find(c => c._id === formData.course)?.title) : "انتخاب کنید..."}
+                  </span>
+                  <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isModalSelectOpen ? 'rotate-180' : ''}`} />
+                </div>
+                
+                {isModalSelectOpen && (
+                  <>
+                    <div className="fixed inset-0 z-[110]" onClick={() => setIsModalSelectOpen(false)}></div>
+                    <div className="absolute top-full left-0 right-0 mt-2 z-[120] bg-[#0f1631] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 max-h-48 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                      {courses.map(course => (
+                        <div 
+                          key={course._id}
+                          onClick={() => {
+                            setFormData({...formData, course: course._id});
+                            setIsModalSelectOpen(false);
+                          }}
+                          className={`px-4 py-3 text-sm cursor-pointer transition-colors ${formData.course === course._id ? 'bg-blue-600/20 text-blue-400' : 'text-zinc-300 hover:bg-white/5 hover:text-white'}`}
+                        >
+                          {course.name || course.title}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="mt-2 flex gap-3">
-                <button type="submit" disabled={isCreating} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold flex justify-center items-center">
+              <div className="mt-4 flex gap-3">
+                <button type="submit" disabled={isCreating} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold flex justify-center items-center hover:shadow-lg transition-all">
                   {isCreating ? <Loader2 size={18} className="animate-spin" /> : "ایجاد و افزودن سوالات"}
                 </button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-3 rounded-xl bg-white/5 text-zinc-300 text-sm font-medium hover:bg-white/10 transition-colors">انصراف</button>
