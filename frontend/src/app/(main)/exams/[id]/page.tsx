@@ -6,7 +6,7 @@ import {
   AlertCircle, CheckCircle2, XCircle, 
   ArrowRight, Award, Loader2 
 } from "lucide-react";
-import QuizTimer from "../../../../components/exams/QuizTimer"; // بررسی کنید که مسیر ایمپورت درست باشد
+import QuizTimer from "../../../../components/exams/QuizTimer"; 
 import Link from "next/link";
 import { toast } from "sonner";
 import { apiFetch } from "../../../../utils/apiFetch";
@@ -24,7 +24,7 @@ export default function StudentExamPage() {
   // استیت‌های جریان آزمون
   const [hasStarted, setHasStarted] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, number>>({}); // ذخیره جواب‌ها: { questionId: selectedOptionIndex }
+  const [answers, setAnswers] = useState<Record<string, number>>({}); 
   const [score, setScore] = useState(0);
 
   // ۱. دریافت اطلاعات آزمون
@@ -50,14 +50,15 @@ export default function StudentExamPage() {
 
   // ۲. انتخاب گزینه
   const handleSelectOption = (questionId: string, optionIndex: number) => {
-    if (isSubmitted) return; // اگر آزمون تمام شده اجازه تغییر نمی‌دهد
+    if (isSubmitted) return; 
     setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
   };
 
   // ۳. پایان و تصحیح آزمون
   const handleFinishExam = () => {
     let currentScore = 0;
-    exam.questions.forEach((q: any) => {
+    // 💡 ایمن‌سازی چرخش روی سوالات
+    exam?.questions?.forEach((q: any) => {
       if (answers[q._id] === q.correctAnswer) {
         currentScore += q.points;
       }
@@ -87,17 +88,21 @@ export default function StudentExamPage() {
     );
   }
 
-  const totalPoints = exam.questions.reduce((sum: number, q: any) => sum + q.points, 0);
+  // اگر دیتا نیامده بود ولی ارور هم نبود، صفحه خالی نشان ندهد و کرش هم نکند
+  if (!exam) return null;
+
+  // 💡 ایمن‌سازی محاسبه نمره کل (استفاده از Optional Chaining و Fallback به آرایه خالی)
+  const totalPoints = (exam.questions || []).reduce((sum: number, q: any) => sum + (q.points || 0), 0);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
+    <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24 font-sans">
       
       {/* هدر صفحه */}
       <div className="flex items-center gap-4 mb-8">
         <button onClick={() => router.back()} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
           <ArrowRight size={20} />
         </button>
-        <h1 className="text-xl md:text-2xl font-bold text-white">آزمون: {exam.title}</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-white">آزمون: {exam?.title}</h1>
       </div>
 
       {/* حالت اول: قبل از شروع آزمون */}
@@ -110,7 +115,8 @@ export default function StudentExamPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10">
             <div className="bg-white/5 rounded-2xl p-4">
               <div className="text-zinc-400 text-sm mb-1">تعداد سوالات</div>
-              <div className="text-xl font-bold text-white">{exam.questions.length} سوال</div>
+              {/* 💡 ایمن‌سازی نمایش تعداد سوالات */}
+              <div className="text-xl font-bold text-white">{exam?.questions?.length || 0} سوال</div>
             </div>
             <div className="bg-white/5 rounded-2xl p-4">
               <div className="text-zinc-400 text-sm mb-1">بارم کل</div>
@@ -118,7 +124,7 @@ export default function StudentExamPage() {
             </div>
             <div className="bg-white/5 rounded-2xl p-4 col-span-2 md:col-span-1">
               <div className="text-zinc-400 text-sm mb-1">زمان آزمون</div>
-              <div className="text-xl font-bold text-blue-400">{exam.timeLimit > 0 ? `${exam.timeLimit} دقیقه` : "نامحدود"}</div>
+              <div className="text-xl font-bold text-blue-400">{exam?.timeLimit > 0 ? `${exam.timeLimit} دقیقه` : "نامحدود"}</div>
             </div>
           </div>
 
@@ -138,12 +144,11 @@ export default function StudentExamPage() {
           {/* نوار چسبان بالا (تایمر یا نتیجه) */}
           <div className="sticky top-4 z-50 bg-[#0a1024]/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center justify-between mb-8 shadow-2xl">
             <div className="text-white font-medium">
-              پاسخ داده شده: <span className="text-blue-400">{Object.keys(answers).length}</span> از {exam.questions.length}
+              پاسخ داده شده: <span className="text-blue-400">{Object.keys(answers).length}</span> از {exam?.questions?.length || 0}
             </div>
             
-            {/* 💡 استفاده از کامپوننت تایمر */}
             {!isSubmitted ? (
-              exam.timeLimit > 0 ? (
+              exam?.timeLimit > 0 ? (
                 <QuizTimer 
                   timeLimitMinutes={exam.timeLimit}
                   onTimeUp={() => {
@@ -164,7 +169,8 @@ export default function StudentExamPage() {
 
           {/* لیست سوالات */}
           <div className="space-y-6">
-            {exam.questions.map((q: any, index: number) => {
+            {/* 💡 ایمن‌سازی مپ کردن روی آرایه سوالات */}
+            {(exam?.questions || []).map((q: any, index: number) => {
               const isCorrectAnswer = isSubmitted && answers[q._id] === q.correctAnswer;
               const isWrongAnswer = isSubmitted && answers[q._id] !== undefined && answers[q._id] !== q.correctAnswer;
               
@@ -183,22 +189,21 @@ export default function StudentExamPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {q.options.map((opt: string, optIdx: number) => {
+                    {(q.options || []).map((opt: string, optIdx: number) => {
                       const isSelected = answers[q._id] === optIdx;
                       
-                      // لاجیک رنگ‌های بعد از پایان آزمون
-                      let optionClass = "bg-white/5 border-white/10 text-zinc-300 hover:border-blue-500/50"; // دیفالت
+                      let optionClass = "bg-white/5 border-white/10 text-zinc-300 hover:border-blue-500/50"; 
                       
                       if (isSubmitted) {
                         if (optIdx === q.correctAnswer) {
-                          optionClass = "bg-green-500/20 border-green-500 text-green-300"; // جواب درست سبز شود
+                          optionClass = "bg-green-500/20 border-green-500 text-green-300"; 
                         } else if (isSelected && optIdx !== q.correctAnswer) {
-                          optionClass = "bg-red-500/20 border-red-500 text-red-300"; // انتخاب غلط قرمز شود
+                          optionClass = "bg-red-500/20 border-red-500 text-red-300"; 
                         } else {
-                          optionClass = "bg-white/5 border-white/5 text-zinc-500 opacity-50"; // بقیه خاموش
+                          optionClass = "bg-white/5 border-white/5 text-zinc-500 opacity-50"; 
                         }
                       } else if (isSelected) {
-                        optionClass = "bg-blue-600/20 border-blue-500 text-blue-300"; // حین آزمون، انتخاب شده آبی شود
+                        optionClass = "bg-blue-600/20 border-blue-500 text-blue-300"; 
                       }
 
                       return (
@@ -222,7 +227,6 @@ export default function StudentExamPage() {
             })}
           </div>
 
-          {/* دکمه ثبت نهایی (فقط حین آزمون نشان داده می‌شود) */}
           {!isSubmitted && (
             <div className="mt-10 flex justify-end">
               <button 
@@ -233,7 +237,6 @@ export default function StudentExamPage() {
               </button>
             </div>
           )}
-
         </div>
       )}
     </div>
