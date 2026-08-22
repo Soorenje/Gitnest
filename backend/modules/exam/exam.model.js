@@ -22,6 +22,9 @@ schema.virtual("questions", {
   foreignField: "exam",
 });
 
+schema.set("toJSON", { virtuals: true });
+schema.set("toObject", { virtuals: true });
+
 const model = mongoose.model("Exam", schema);
 
 module.exports = model;
