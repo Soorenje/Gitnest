@@ -35,19 +35,20 @@ export default function InstructorExamsPage() {
         if (res.ok) {
           const data = await res.json();
           
-          // 💡 کلید حل مشکل: اگر دیتا مستقیماً آرایه بود همان را استفاده کن، وگرنه داخل کلید data بگرد
+          // 💡 دریافت ایمن لیست دوره‌ها (پشتیبانی از هر دو حالت آرایه یا آبجکت)
           const coursesList = Array.isArray(data) ? data : (data.data || []);
           
           setCourses(coursesList);
           
-          // انتخاب پیش‌فرض اولین دوره
           if (coursesList.length > 0) {
             setSelectedCourseId(coursesList[0]._id);
             setFormData(prev => ({ ...prev, course: coursesList[0]._id }));
           }
+        } else {
+          toast.error("خطا در دریافت اطلاعات دوره‌ها از سرور");
         }
       } catch (error) {
-        toast.error("خطا در دریافت لیست دوره‌ها");
+        toast.error("ارتباط با سرور برقرار نشد");
       } finally {
         setIsLoading(false);
       }
@@ -113,7 +114,7 @@ export default function InstructorExamsPage() {
   };
 
   return (
-    <div className="animate-in fade-in duration-500 pb-20">
+    <div className="animate-in fade-in duration-500 pb-20 font-sans">
       {/* هدر صفحه */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white/[0.02] border border-white/5 rounded-3xl p-6 shadow-lg">
         <div>
@@ -131,13 +132,15 @@ export default function InstructorExamsPage() {
       {/* فیلتر دوره */}
       <div className="mb-6 flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
         <label className="text-sm text-zinc-300 font-medium whitespace-nowrap">نمایش آزمون‌های دوره:</label>
+        {/* 💡 استایل‌های Select آپدیت شد */}
         <select 
           value={selectedCourseId}
           onChange={(e) => setSelectedCourseId(e.target.value)}
-          className="flex-1 max-w-xs bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+          className="flex-1 max-w-xs bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-medium focus:outline-none focus:border-blue-500 cursor-pointer appearance-none custom-select-icon"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 12px center', backgroundSize: '16px' }}
         >
           {courses.map(course => (
-            <option key={course._id} value={course._id}>{course.name || course.title}</option>
+            <option key={course._id} value={course._id} className="bg-[#0f1631] text-zinc-200 py-2">{course.name || course.title}</option>
           ))}
         </select>
       </div>
@@ -187,35 +190,42 @@ export default function InstructorExamsPage() {
             <form onSubmit={handleCreateExam} className="p-6 flex flex-col gap-5">
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">عنوان آزمون *</label>
-                <input required type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" placeholder="مثال: آزمون میان‌ترم ریکت" />
+                <input required type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-blue-500 transition-colors" placeholder="مثال: آزمون میان‌ترم ریکت" />
               </div>
               
               <div className="flex gap-4">
                 <div className="flex-[2]">
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">نامک (Slug) *</label>
-                  <input required type="text" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" placeholder="react-midterm" />
+                  <input required type="text" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-blue-500 transition-colors" placeholder="react-midterm" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">زمان (دقیقه)</label>
-                  <input type="number" min="0" value={formData.timeLimit} onChange={(e) => setFormData({...formData, timeLimit: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors" />
+                  <input type="number" min="0" value={formData.timeLimit} onChange={(e) => setFormData({...formData, timeLimit: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-blue-500 transition-colors" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">دوره مربوطه *</label>
-                <select required value={formData.course} onChange={(e) => setFormData({...formData, course: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 transition-colors">
-                  <option value="" disabled>انتخاب کنید...</option>
+                {/* 💡 استایل‌های Select آپدیت شد */}
+                <select 
+                  required 
+                  value={formData.course} 
+                  onChange={(e) => setFormData({...formData, course: e.target.value})} 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-blue-500 transition-colors cursor-pointer appearance-none"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 16px center', backgroundSize: '16px' }}
+                >
+                  <option value="" disabled className="bg-[#0f1631] text-zinc-500">انتخاب کنید...</option>
                   {courses.map(course => (
-                    <option key={course._id} value={course._id}>{course.name || course.title}</option>
+                    <option key={course._id} value={course._id} className="bg-[#0f1631] text-zinc-200">{course.name || course.title}</option>
                   ))}
                 </select>
               </div>
 
               <div className="mt-2 flex gap-3">
-                <button type="submit" disabled={isCreating} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium flex justify-center items-center">
+                <button type="submit" disabled={isCreating} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold flex justify-center items-center">
                   {isCreating ? <Loader2 size={18} className="animate-spin" /> : "ایجاد و افزودن سوالات"}
                 </button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-3 rounded-xl bg-white/5 text-zinc-300 text-sm hover:bg-white/10 transition-colors">انصراف</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-3 rounded-xl bg-white/5 text-zinc-300 text-sm font-medium hover:bg-white/10 transition-colors">انصراف</button>
               </div>
             </form>
           </div>
